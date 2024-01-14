@@ -1,47 +1,52 @@
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+import sys
+import cv2 as cv
 import numpy as np
-import cv2
 
-def draw_lines(img, houghLinesP, color=[0, 255, 0], thickness=2):
-    Lcount = 0
-    for line in houghLinesP:
-        Lcount += 1
-        x1, y1, x2, y2 = line[0]
-        cv2.line(img, (x1, y1), (x2, y2), color, thickness)
-    print(Lcount,'lines')
-
-def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
-    return cv2.addWeighted(initial_img, α, img, β, λ)
-
+# ฟังก์ชัน prewitt
 def prewitt(image):
-    kernelx = np.array([[1, 1, 1], [0, 0, 0], [-1, -1, -1]])
-    kernely = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
-    img_prewittx = cv2.filter2D(img_gaussian, -1, kernelx)
-    img_prewitty = cv2.filter2D(img_gaussian, -1, kernely)
-    edges_image = img_prewittx + img_prewitty
-    return edges_image
+    gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+    cv.imshow("gray", gray_image)
+    Hx = np.array([[-1, 0, 1],[-1, 0, 1],[-1, 0, 1]])
+    Hy = np.array([[-1, -1, -1],[0, 0, 0],[1, 1, 1]])
+    pre_x = cv.filter2D(gray_image, -1, Hx) / 8.0
+    pre_y = cv.filter2D(gray_image, -1, Hy) / 8.0
+    #calculate the gradient magnitude of vectors
+    pre_out = np.sqrt(np.power(pre_x, 2) + np.power(pre_y, 2))
+    # mapping values from 0 to 255
+    pre_out = (pre_out / np.max(pre_out)) * 255
+    return pre_out.astype(np.uint8)
 
-image = mpimg.imread("road.jpg")
-gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-img_gaussian = cv2.GaussianBlur(gray_image,(3,3),0)
+def main(argv):
+    default_file = r'E:\Senyai-main\Senyai-main\line\road.jpg'
+    filename = argv[0] if len(argv) > 0 else default_file
+    # Loads an image
+    src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_COLOR)
+    # Check if image is loaded fine
+    if src is None:
+        print('Error opening image!')
+        print('Usage: hough_circle.py [image_name -- default ' + default_file + '] \n')
+        return -1
 
-#
-edges_image = prewitt(image)
+    # สี > ขาวดำ > เบลอ > binary(canny)
+    
+    edges_image = prewitt(src)  # หาขอบแบบcanny
+   
+    # หาวงกลม
+    lines = cv.HoughLinesP(edges_image, 1, np.pi/180, 60 ,minLineLength=180, maxLineGap=2)
 
-rho_resolution = 1
-theta_resolution = np.pi / 360
-threshold = 100  # Adjust as needed
-min_line_length = 100  # Adjust as needed
-max_line_gap = 5  # Adjust as needed
+    # Draw the lines on the original image
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            cv.line(src, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-hough_linesP = cv2.HoughLinesP(edges_image, rho_resolution, theta_resolution, threshold,
-                              minLineLength=min_line_length, maxLineGap=max_line_gap)
+    
+    cv.imshow("detected circles", src)
+    cv.imshow("prewitt_edge",edges_image)
+    cv.waitKey(0)
 
-hough_linesP_image = np.zeros_like(image)
-draw_lines(hough_linesP_image, hough_linesP)
-original_image_with_hough_linesP = weighted_img(hough_linesP_image, image)
+    return 0
 
-plt.title("prewitt")
-plt.imshow(original_image_with_hough_linesP, cmap='gray')
-plt.show()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

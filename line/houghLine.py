@@ -11,7 +11,7 @@ def draw_lines(img, houghLinesP, color=[0, 255, 0], thickness=2):
 def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
     return cv2.addWeighted(initial_img, α, img, β, λ)
 
-image = mpimg.imread("road.jpg")
+image = cv2.imread(r'E:\Senyai-main\Senyai-main\line\road.jpg')
 gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 blurred_image = cv2.GaussianBlur(gray_image, (9, 9), 0)
 edges_image = cv2.Canny(blurred_image, 50, 120)

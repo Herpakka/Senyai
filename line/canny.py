@@ -1,43 +1,44 @@
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+import sys
+import cv2 as cv
 import numpy as np
-import cv2
 
-def draw_lines(img, houghLinesP, color=[0, 255, 0], thickness=2):
-    Lcount = 0
-    for line in houghLinesP:
-        Lcount += 1
-        x1, y1, x2, y2 = line[0]
-        cv2.line(img, (x1, y1), (x2, y2), color, thickness)
-    print(Lcount)
+def main(argv):
+    default_file = r'E:\Senyai-main\Senyai-main\line\road.jpg'
+    filename = argv[0] if len(argv) > 0 else default_file
+    # Loads an image
+    src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_COLOR)
+    # Check if image is loaded fine
+    if src is None:
+        print('Error opening image!')
+        print(f'Usage: canny.py [image_name -- default {default_file}] \n')
+        return -1
 
-def weighted_img(img, initial_img, α=0.8, β=1., λ=0.):
-    return cv2.addWeighted(initial_img, α, img, β, λ)
+    # Convert to grayscale
+    gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
-image = mpimg.imread("road.jpg")
-gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-blurred_image = cv2.GaussianBlur(gray_image, (9, 9), 0)
-edges_image = cv2.Canny(blurred_image, 50, 120)
+    # Apply Gaussian Blur
+    blur = cv.GaussianBlur(gray, (9, 9), 2)
 
-rho_resolution = 1
-theta_resolution = np.pi / 180
-threshold = 50  # Adjust as needed
-min_line_length = 100  # Adjust as needed
-max_line_gap = 50  # Adjust as needed
+    # Apply Canny edge detection
+    edges_image = cv.Canny(blur, 0, 67)
+    print(edges_image)  # Convert to 8-bit unsigned integer
 
-hough_linesP = cv2.HoughLinesP(edges_image, rho_resolution, theta_resolution, threshold,
-                              minLineLength=min_line_length, maxLineGap=max_line_gap)
+    # Use Hough Line Transform to detect lines
+    lines = cv.HoughLinesP(edges_image, 1, np.pi/180, 80, minLineLength=60, maxLineGap=15)
 
-hough_linesP_image = np.zeros_like(image)
-draw_lines(hough_linesP_image, hough_linesP)
-original_image_with_hough_linesP = weighted_img(hough_linesP_image, image)
+    # Draw the lines on the original image
+    if lines is not None:
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            cv.line(src, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
-plt.title("canny")
-# plt.figure(figsize=(30, 20))
-# plt.subplot(131)
-# plt.imshow(image)
-# plt.subplot(132)
-# plt.imshow(edges_image, cmap='gray')
-# plt.subplot(133)
-plt.imshow(original_image_with_hough_linesP, cmap='gray')
-plt.show()
+    cv.imshow("blur", blur)
+    cv.imshow("gray", gray)
+    cv.imshow("canny_edges", edges_image)
+    cv.imshow("detected lines", src)
+    cv.waitKey(0)
+
+    return 0
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
