@@ -4,15 +4,15 @@ import numpy as np
 
 # ฟังก์ชัน sobel
 def sobel(image):
-    gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)  # ขาวดำ
-    img_gaussian = cv.GaussianBlur(gray_image, (3, 3), 0)  # เบลอ
-    img_sobelx = cv.Sobel(img_gaussian, cv.CV_8U, 1, 0, ksize=3)  # kernel แกนx
-    img_sobely = cv.Sobel(img_gaussian, cv.CV_8U, 0, 1, ksize=3)  # kernel แกนy
+    gray_image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+    cv.imshow("gray_image", gray_image)  # ขาวดำ
+    img_sobelx = cv.Sobel(gray_image, cv.CV_8U, 1, 0, ksize=3)  # kernel แกนx
+    img_sobely = cv.Sobel(gray_image, cv.CV_8U, 0, 1, ksize=3)  # kernel แกนy
     edges_image = img_sobelx + img_sobely  # convolution
     return edges_image  # return ตัวแปรที่ convo 
 
 def main(argv):
-    default_file = 'Meth.png'
+    default_file = 'E:\Senyai-main\Senyai-main\circle\Meth.png'
     filename = argv[0] if len(argv) > 0 else default_file
     # Loads an image
     src = cv.imread(cv.samples.findFile(filename), cv.IMREAD_COLOR)
@@ -29,7 +29,7 @@ def main(argv):
     rows = edges_image.shape[0]
     circles = cv.HoughCircles(edges_image, cv.HOUGH_GRADIENT, 1, rows / 8,
                               param1=100, param2=30,
-                              minRadius=1, maxRadius=30)
+                              minRadius=15, maxRadius=30)
 
     if circles is not None:
         circles = np.uint16(np.around(circles))
@@ -45,7 +45,7 @@ def main(argv):
         print(count, 'circles')
 
     cv.imshow("detected circles", src)
-    cv.imshow("edge",edges_image)
+    cv.imshow("sobel_edge",edges_image)
     cv.waitKey(0)
 
     return 0
